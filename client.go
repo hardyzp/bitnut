@@ -188,8 +188,10 @@ func (c *Client) parseRequest(r *request, opts ...RequestOption) (err error) {
         r.setParam(timestampKey, currentTimestamp()-c.TimeOffset)
     }
     queryString := r.query.Encode()
+    fmt.Println("queryString:", queryString)
     body := &bytes.Buffer{}
     bodyString := r.form.Encode()
+    fmt.Println("bodystring:", bodyString)
     header := http.Header{}
     if r.header != nil {
         header = r.header.Clone()
@@ -201,7 +203,9 @@ func (c *Client) parseRequest(r *request, opts ...RequestOption) (err error) {
     if r.secType == secTypeAPIKey || r.secType == secTypeSigned {
         header.Set("BU-ACCESS-KEY", c.APIKey)
     }
-
+    if queryString != "" {
+        fullURL = fmt.Sprintf("%s?%s", fullURL, queryString)
+    }
     if r.secType == secTypeSigned {
         raw := fmt.Sprintf("%s%s", queryString, bodyString)
         mac := hmac.New(sha256.New, []byte(c.SecretKey))
@@ -253,6 +257,9 @@ func (c *Client) callAPI(ctx context.Context, r *request, opts ...RequestOption)
             err = cerr
         }
     }()
+    var temp map[string]interface{}
+    jsoniter.Unmarshal(data, &temp)
+    fmt.Println("temp", temp)
     c.debug("response: %#v", res)
     c.debug("response body: %s", string(data))
     c.debug("response status code: %d", res.StatusCode)

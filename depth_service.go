@@ -3,8 +3,6 @@ package bitnut
 import (
     "context"
     "net/http"
-
-    "github.com/hardyzp/bitnut/common"
 )
 
 // DepthService show depth info
@@ -27,7 +25,7 @@ func (s *DepthService) Limit(limit int) *DepthService {
 }
 
 // Do send request
-func (s *DepthService) Do(ctx context.Context, opts ...RequestOption) (res *DepthResponse, err error) {
+func (s *DepthService) Do(ctx context.Context, opts ...RequestOption) (depth *Depth, err error) {
     r := &request{
         method:   http.MethodGet,
         endpoint: "/v1/tick/depth",
@@ -40,42 +38,22 @@ func (s *DepthService) Do(ctx context.Context, opts ...RequestOption) (res *Dept
     if err != nil {
         return nil, err
     }
-    j, err := newJSON(data)
+    var res DepthResponse
+    err = json.Unmarshal(data, &res)
     if err != nil {
         return nil, err
     }
-    res = new(DepthResponse)
-    res.LastUpdateID = j.Get("lastUpdateId").MustInt64()
-    bidsLen := len(j.Get("bids").MustArray())
-    res.Bids = make([]Bid, bidsLen)
-    for i := 0; i < bidsLen; i++ {
-        item := j.Get("bids").GetIndex(i)
-        res.Bids[i] = Bid{
-            Price:    item.GetIndex(0).MustString(),
-            Quantity: item.GetIndex(1).MustString(),
-        }
-    }
-    asksLen := len(j.Get("asks").MustArray())
-    res.Asks = make([]Ask, asksLen)
-    for i := 0; i < asksLen; i++ {
-        item := j.Get("asks").GetIndex(i)
-        res.Asks[i] = Ask{
-            Price:    item.GetIndex(0).MustString(),
-            Quantity: item.GetIndex(1).MustString(),
-        }
-    }
-    return res, nil
+    return &res.Data, nil
 }
 
 // DepthResponse define depth info with bids and asks
-type DepthResponse struct {
-    LastUpdateID int64 `json:"lastUpdateId"`
-    Bids         []Bid `json:"bids"`
-    Asks         []Ask `json:"asks"`
+type Depth struct {
+    Bids [][2]string `json:"bids"`
+    Asks [][2]string `json:"asks"`
 }
 
-// Ask is a type alias for PriceLevel.
-type Ask = common.PriceLevel
-
-// Bid is a type alias for PriceLevel.
-type Bid = common.PriceLevel
+type DepthResponse struct {
+    Code int    `json:"code"`
+    Msg  string `json:"msg"`
+    Data Depth  `json:"data"`
+}

@@ -14,7 +14,7 @@ type ServerTimeService struct {
 func (s *ServerTimeService) Do(ctx context.Context, opts ...RequestOption) (serverTime int64, err error) {
     r := &request{
         method:   http.MethodGet,
-        endpoint: "/api/v1/time",
+        endpoint: "/v1/time",
     }
     data, err := s.c.callAPI(ctx, r, opts...)
     if err != nil {

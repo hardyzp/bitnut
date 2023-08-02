@@ -268,7 +268,7 @@ func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res 
 type CancelOrderService struct {
     c                 *Client
     symbol            string
-    orderID           *int64
+    orderId           *int64
     origClientOrderID *string
 }
 
@@ -279,8 +279,8 @@ func (s *CancelOrderService) Symbol(symbol string) *CancelOrderService {
 }
 
 // OrderID set orderID
-func (s *CancelOrderService) OrderID(orderID int64) *CancelOrderService {
-    s.orderID = &orderID
+func (s *CancelOrderService) OrderID(orderId int64) *CancelOrderService {
+    s.orderId = &orderId
     return s
 }
 
@@ -294,17 +294,13 @@ func (s *CancelOrderService) OrigClientOrderID(origClientOrderID string) *Cancel
 func (s *CancelOrderService) Do(ctx context.Context, opts ...RequestOption) (res *CancelOrderResponse, err error) {
     r := &request{
         method:   http.MethodDelete,
-        endpoint: "/api/v3/order",
+        endpoint: "/v1/trade/cancel",
         secType:  secTypeSigned,
     }
     r.setFormParam("symbol", s.symbol)
-    if s.orderID != nil {
-        r.setFormParam("orderId", *s.orderID)
+    if s.orderId != nil {
+        r.setFormParam("orderId", *s.orderId)
     }
-    if s.origClientOrderID != nil {
-        r.setFormParam("origClientOrderId", *s.origClientOrderID)
-    }
-
     data, err := s.c.callAPI(ctx, r, opts...)
     if err != nil {
         return nil, err
@@ -329,19 +325,29 @@ func (s *CancelOpenOrdersService) Symbol(symbol string) *CancelOpenOrdersService
     return s
 }
 
+// Do send request
+func (s *CancelOpenOrdersService) Do(ctx context.Context, opts ...RequestOption) (res *CancelOrderResponse, err error) {
+    r := &request{
+        method:   http.MethodDelete,
+        endpoint: "/v1/trade/cancel",
+        secType:  secTypeSigned,
+    }
+    r.setFormParam("symbol", s.symbol)
+    data, err := s.c.callAPI(ctx, r, opts...)
+    if err != nil {
+        return nil, err
+    }
+    res = new(CancelOrderResponse)
+    err = json.Unmarshal(data, res)
+    if err != nil {
+        return nil, err
+    }
+    return res, nil
+}
+
 // CancelOrderResponse may be returned included in a CancelOpenOrdersResponse.
 type CancelOrderResponse struct {
-    Symbol            string          `json:"symbol"`
-    OrigClientOrderID string          `json:"origClientOrderId"`
-    OrderID           int64           `json:"orderId"`
-    OrderListID       int64           `json:"orderListId"`
-    ClientOrderID     string          `json:"clientOrderId"`
-    TransactTime      int64           `json:"transactTime"`
-    Price             string          `json:"price"`
-    OrigQuantity      string          `json:"origQty"`
-    ExecutedQuantity  string          `json:"executedQty"`
-    Status            OrderStatusType `json:"status"`
-    TimeInForce       TimeInForceType `json:"timeInForce"`
-    Type              OrderType       `json:"type"`
-    Side              SideType        `json:"side"`
+    Code string        `json:"code"`
+    Msg  string        `json:"msg"`
+    Data []interface{} `json:"data"`
 }

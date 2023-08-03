@@ -108,17 +108,9 @@ func (s *CreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res
 
 // CreateOrderResponse define create order response
 type CreateOrderResponse struct {
-    Symbol           string `json:"symbol"`
-    OrderID          int64  `json:"orderId"`
-    ClientOrderID    string `json:"clientOrderId"`
-    TransactTime     int64  `json:"transactTime"`
-    Price            string `json:"price"`
-    OrigQuantity     string `json:"origQty"`
-    ExecutedQuantity string `json:"executedQty"`
-
-    Status OrderStatusType `json:"status"`
-    Type   OrderType       `json:"type"`
-    Side   SideType        `json:"side"`
+    Code int      `json:"code"`
+    Msg  string   `json:"msg"`
+    Data []string `json:"data"`
 }
 
 // GetOrderService get an order
@@ -175,18 +167,14 @@ func (s *GetOrderService) Do(ctx context.Context, opts ...RequestOption) (res *O
 
 // Order define order info
 type Order struct {
-    Symbol                   string          `json:"symbol"`
-    OrderID                  int64           `json:"orderId"`
-    OrderListId              int64           `json:"orderListId"`
-    ClientOrderID            string          `json:"clientOrderId"`
-    Price                    string          `json:"price"`
-    OrigQuantity             string          `json:"origQty"`
-    ExecutedQuantity         string          `json:"executedQty"`
-    CummulativeQuoteQuantity string          `json:"cummulativeQuoteQty"`
-    Status                   OrderStatusType `json:"status"`
-    TimeInForce              TimeInForceType `json:"timeInForce"`
-    Type                     OrderType       `json:"type"`
-    Side                     SideType        `json:"side"`
+    Symbol           string          `json:"symbol"`
+    OrderID          int64           `json:"orderId"`
+    ClientOrderID    string          `json:"clientOrderId"`
+    Price            string          `json:"price"`
+    OrigQuantity     string          `json:"origQty"`
+    ExecutedQuantity string          `json:"executedQty"`
+    Status           OrderStatusType `json:"status"`
+    Side             SideType        `json:"side"`
 
     Time       int64 `json:"time"`
     UpdateTime int64 `json:"updateTime"`
@@ -196,7 +184,7 @@ type Order struct {
 type ListOrdersService struct {
     c         *Client
     symbol    string
-    orderID   *int64
+    orderId   *int64
     startTime *int64
     endTime   *int64
     limit     *int
@@ -210,17 +198,17 @@ func (s *ListOrdersService) Symbol(symbol string) *ListOrdersService {
 
 // OrderID set orderID
 func (s *ListOrdersService) OrderID(orderID int64) *ListOrdersService {
-    s.orderID = &orderID
+    s.orderId = &orderID
     return s
 }
 
-// StartTime set starttime
+// StartTime set startTime
 func (s *ListOrdersService) StartTime(startTime int64) *ListOrdersService {
     s.startTime = &startTime
     return s
 }
 
-// EndTime set endtime
+// EndTime set endTime
 func (s *ListOrdersService) EndTime(endTime int64) *ListOrdersService {
     s.endTime = &endTime
     return s
@@ -240,8 +228,8 @@ func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res 
         secType:  secTypeSigned,
     }
     r.setParam("symbol", s.symbol)
-    if s.orderID != nil {
-        r.setParam("orderId", *s.orderID)
+    if s.orderId != nil {
+        r.setParam("orderId", *s.orderId)
     }
     if s.startTime != nil {
         r.setParam("startTime", *s.startTime)
@@ -268,7 +256,7 @@ func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res 
 type CancelOrderService struct {
     c                 *Client
     symbol            string
-    orderId           *int64
+    orderId           *string
     origClientOrderID *string
 }
 
@@ -279,7 +267,7 @@ func (s *CancelOrderService) Symbol(symbol string) *CancelOrderService {
 }
 
 // OrderID set orderID
-func (s *CancelOrderService) OrderID(orderId int64) *CancelOrderService {
+func (s *CancelOrderService) OrderID(orderId string) *CancelOrderService {
     s.orderId = &orderId
     return s
 }
@@ -293,7 +281,7 @@ func (s *CancelOrderService) OrigClientOrderID(origClientOrderID string) *Cancel
 // Do send request
 func (s *CancelOrderService) Do(ctx context.Context, opts ...RequestOption) (res *CancelOrderResponse, err error) {
     r := &request{
-        method:   http.MethodDelete,
+        method:   http.MethodPost,
         endpoint: "/v1/trade/cancel",
         secType:  secTypeSigned,
     }

@@ -7,7 +7,6 @@ import (
     "crypto/sha256"
     "crypto/tls"
     "encoding/base64"
-    "encoding/hex"
     "fmt"
     "github.com/bitly/go-simplejson"
     "github.com/hardyzp/bitnut/common"
@@ -191,6 +190,7 @@ func (c *Client) parseRequest(r *request, opts ...RequestOption) (err error) {
     fmt.Println("queryString:", queryString)
     body := &bytes.Buffer{}
     bodyString := r.form.Encode()
+    fmt.Println("rform:", r.form)
     fmt.Println("bodystring:", bodyString)
     header := http.Header{}
     if r.header != nil {
@@ -207,14 +207,14 @@ func (c *Client) parseRequest(r *request, opts ...RequestOption) (err error) {
         fullURL = fmt.Sprintf("%s?%s", fullURL, queryString)
     }
     if r.secType == secTypeSigned {
-        raw := fmt.Sprintf("%s%s", queryString, bodyString)
+        // raw := fmt.Sprintf("%s%s", queryString, bodyString)
+        raw := bodyString
         mac := hmac.New(sha256.New, []byte(c.SecretKey))
         _, err = mac.Write([]byte(raw))
         if err != nil {
             return err
         }
-        sha := hex.EncodeToString(mac.Sum(nil))
-        signature := base64.StdEncoding.EncodeToString([]byte(sha))
+        signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
         header.Set("BU-ACCESS-SIGN", signature)
     }
     c.debug("full url: %s, body: %s", fullURL, bodyString)

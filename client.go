@@ -257,9 +257,6 @@ func (c *Client) callAPI(ctx context.Context, r *request, opts ...RequestOption)
             err = cerr
         }
     }()
-    var temp map[string]interface{}
-    jsoniter.Unmarshal(data, &temp)
-    fmt.Println("temp", temp)
     c.debug("response: %#v", res)
     c.debug("response body: %s", string(data))
     c.debug("response status code: %d", res.StatusCode)

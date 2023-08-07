@@ -81,7 +81,7 @@ func (s *CreateOrderService) createOrder(ctx context.Context, endpoint string, o
         m["price"] = *s.price
     }
     if s.newClientOrderID != nil {
-        m["newClientOrderId"] = *s.newClientOrderID
+        m["clientOid"] = *s.newClientOrderID
     }
 
     r.setFormParams(m)

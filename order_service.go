@@ -117,7 +117,7 @@ type CreateOrderResponse struct {
 type GetOrderService struct {
     c                 *Client
     symbol            string
-    orderID           *int64
+    orderID           *string
     origClientOrderID *string
 }
 
@@ -128,7 +128,7 @@ func (s *GetOrderService) Symbol(symbol string) *GetOrderService {
 }
 
 // OrderID set orderID
-func (s *GetOrderService) OrderID(orderID int64) *GetOrderService {
+func (s *GetOrderService) OrderID(orderID string) *GetOrderService {
     s.orderID = &orderID
     return s
 }
@@ -143,32 +143,41 @@ func (s *GetOrderService) OrigClientOrderID(origClientOrderID string) *GetOrderS
 func (s *GetOrderService) Do(ctx context.Context, opts ...RequestOption) (res *Order, err error) {
     r := &request{
         method:   http.MethodPost,
-        endpoint: "/api/v3/order",
+        endpoint: "/v1/spot/user/orderInfo",
         secType:  secTypeSigned,
     }
+    m := params{}
+    m["symbol"] = s.symbol
     r.setParam("symbol", s.symbol)
     if s.orderID != nil {
-        r.setParam("orderId", *s.orderID)
+        m["orderId"] = *s.orderID
     }
     if s.origClientOrderID != nil {
-        r.setParam("origClientOrderId", *s.origClientOrderID)
+        m["origClientOrderId"] = *s.origClientOrderID
     }
+    r.setFormParams(m)
     data, err := s.c.callAPI(ctx, r, opts...)
     if err != nil {
         return nil, err
     }
-    res = new(Order)
-    err = json.Unmarshal(data, res)
+    ret := new(orderResponse)
+    err = json.Unmarshal(data, &ret)
     if err != nil {
         return nil, err
     }
-    return res, nil
+    return &ret.Data, nil
+}
+
+type orderResponse struct {
+    Code string `json:"code"`
+    Msg  string `json:"msg"`
+    Data Order  `json:"data"`
 }
 
 // Order define order info
 type Order struct {
     Symbol           string          `json:"symbol"`
-    OrderID          int64           `json:"orderId"`
+    OrderID          string          `json:"orderId"`
     ClientOrderID    string          `json:"clientOrderId"`
     Price            string          `json:"price"`
     OrigQuantity     string          `json:"origQty"`
@@ -224,7 +233,7 @@ func (s *ListOrdersService) Limit(limit int) *ListOrdersService {
 func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res []*Order, err error) {
     r := &request{
         method:   http.MethodGet,
-        endpoint: "/api/v3/allOrders",
+        endpoint: "/v1/spot/user/order",
         secType:  secTypeSigned,
     }
     r.setParam("symbol", s.symbol)
@@ -316,8 +325,8 @@ func (s *CancelOpenOrdersService) Symbol(symbol string) *CancelOpenOrdersService
 // Do send request
 func (s *CancelOpenOrdersService) Do(ctx context.Context, opts ...RequestOption) (res *CancelOrderResponse, err error) {
     r := &request{
-        method:   http.MethodDelete,
-        endpoint: "/v1/trade/cancel",
+        method:   http.MethodPost,
+        endpoint: "/v1/trade/open-cancel",
         secType:  secTypeSigned,
     }
     r.setFormParam("symbol", s.symbol)

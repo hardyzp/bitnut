@@ -55,8 +55,8 @@ type AccountType string
 
 // Endpoints
 const (
-    baseAPIMainURL    = "https://8.210.158.112:8787"
-    baseAPITestnetURL = "https://testnet.binance.vision"
+    baseAPIMainURL    = "https://api.bitnut.com"
+    baseAPITestnetURL = "https://testnet.bitnut.vision"
 )
 
 // UseTestnet switch all the API endpoints from production to the testnet
@@ -187,11 +187,10 @@ func (c *Client) parseRequest(r *request, opts ...RequestOption) (err error) {
         r.setParam(timestampKey, currentTimestamp()-c.TimeOffset)
     }
     queryString := r.query.Encode()
-    fmt.Println("queryString:", queryString)
+    c.debug("queryString:", queryString)
     body := &bytes.Buffer{}
     bodyString := r.form.Encode()
-    fmt.Println("rform:", r.form)
-    fmt.Println("bodystring:", bodyString)
+    c.debug("bodyString:", bodyString)
     header := http.Header{}
     if r.header != nil {
         header = r.header.Clone()

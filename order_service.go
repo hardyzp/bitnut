@@ -169,7 +169,7 @@ func (s *GetOrderService) Do(ctx context.Context, opts ...RequestOption) (res *O
 }
 
 type orderResponse struct {
-    Code string `json:"code"`
+    Code int    `json:"code"`
     Msg  string `json:"msg"`
     Data Order  `json:"data"`
 }
@@ -197,6 +197,7 @@ type ListOrdersService struct {
     startTime *int64
     endTime   *int64
     limit     *int
+    status    *int
 }
 
 // Symbol set symbol
@@ -229,36 +230,47 @@ func (s *ListOrdersService) Limit(limit int) *ListOrdersService {
     return s
 }
 
+// Status set status
+func (s *ListOrdersService) Status(status int) *ListOrdersService {
+    s.status = &status
+    return s
+}
+
 // Do send request
-func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res []*Order, err error) {
+func (s *ListOrdersService) Do(ctx context.Context, opts ...RequestOption) (res ListOrderResponse, err error) {
     r := &request{
-        method:   http.MethodGet,
+        method:   http.MethodPost,
         endpoint: "/v1/spot/user/order",
         secType:  secTypeSigned,
     }
-    r.setParam("symbol", s.symbol)
+    r.setFormParam("symbol", s.symbol)
     if s.orderId != nil {
-        r.setParam("orderId", *s.orderId)
+        r.setFormParam("orderId", *s.orderId)
     }
     if s.startTime != nil {
-        r.setParam("startTime", *s.startTime)
+        r.setFormParam("startTime", *s.startTime)
     }
     if s.endTime != nil {
-        r.setParam("endTime", *s.endTime)
+        r.setFormParam("endTime", *s.endTime)
     }
     if s.limit != nil {
-        r.setParam("limit", *s.limit)
+        r.setFormParam("limit", *s.limit)
+    }
+    if s.status != nil {
+        r.setFormParam("status", *s.status)
     }
     data, err := s.c.callAPI(ctx, r, opts...)
     if err != nil {
-        return []*Order{}, err
+        return ListOrderResponse{}, err
     }
-    res = make([]*Order, 0)
-    err = json.Unmarshal(data, &res)
+    //res = make([]*Order, 0)
+    var ret ListOrderResponse
+
+    err = json.Unmarshal(data, &ret)
     if err != nil {
-        return []*Order{}, err
+        return ListOrderResponse{}, err
     }
-    return res, nil
+    return ret, nil
 }
 
 // CancelOrderService cancel an order
@@ -344,7 +356,14 @@ func (s *CancelOpenOrdersService) Do(ctx context.Context, opts ...RequestOption)
 
 // CancelOrderResponse may be returned included in a CancelOpenOrdersResponse.
 type CancelOrderResponse struct {
-    Code string        `json:"code"`
+    Code int           `json:"code"`
     Msg  string        `json:"msg"`
     Data []interface{} `json:"data"`
+}
+
+// ListOrderResponse may be returned included in a CancelOpenOrdersResponse.
+type ListOrderResponse struct {
+    Code int     `json:"code"`
+    Msg  string  `json:"msg"`
+    Data []Order `json:"data"`
 }
